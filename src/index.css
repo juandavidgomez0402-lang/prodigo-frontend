@@ -167,6 +167,7 @@ img {
   background-color: #111111;
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   color: #ffffff;
 }
 
@@ -713,6 +714,7 @@ img {
   }
 
   .product-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 20px;
   }
 }

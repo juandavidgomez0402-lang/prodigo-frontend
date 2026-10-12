@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { fetchStore } from "../../api.js"
 import { adminRequest } from "../../lib/adminApi.js"
@@ -145,13 +145,63 @@ function WhatsappEditor({ whatsapp, onSave, onDone, onError }) {
 }
 
 function CoverEditor({ cover, onSave, onDone, onError }) {
+  const frameRef = useRef(null)
+  const dragRef = useRef(null)
+  const naturalRef = useRef(null)
   const [image, setImage] = useState(cover.image)
+  const [focus, setFocus] = useState({
+    x: focusPercent(cover.focusX),
+    y: focusPercent(cover.focusY),
+  })
+  const [dragging, setDragging] = useState(false)
   const [note, setNote] = useState("")
   const [pending, setPending] = useState(false)
 
   useEffect(() => {
     setImage(cover.image)
-  }, [cover.image])
+    setFocus({ x: focusPercent(cover.focusX), y: focusPercent(cover.focusY) })
+  }, [cover.image, cover.focusX, cover.focusY])
+
+  useEffect(() => {
+    naturalRef.current = null
+    if (!image) return undefined
+    const photo = new Image()
+    photo.onload = () => {
+      naturalRef.current = { width: photo.naturalWidth, height: photo.naturalHeight }
+    }
+    photo.src = image
+    return () => {
+      photo.onload = null
+    }
+  }, [image])
+
+  function beginDrag(event) {
+    if (!image || !frameRef.current) return
+    frameRef.current.setPointerCapture(event.pointerId)
+    dragRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      focusX: focus.x,
+      focusY: focus.y,
+    }
+    setDragging(true)
+  }
+
+  function moveDrag(event) {
+    const drag = dragRef.current
+    const frame = frameRef.current
+    if (!drag || !frame) return
+    const box = frame.getBoundingClientRect()
+    setFocus({
+      x: movedFocus(drag.focusX, event.clientX - drag.x, "x", box, naturalRef.current),
+      y: movedFocus(drag.focusY, event.clientY - drag.y, "y", box, naturalRef.current),
+    })
+  }
+
+  function endDrag() {
+    dragRef.current = null
+    setDragging(false)
+  }
 
   async function choose(event) {
     const file = event.target.files?.[0]
@@ -161,6 +211,7 @@ function CoverEditor({ cover, onSave, onDone, onError }) {
     try {
       const compressed = await compressImage(file, "cover")
       setImage(compressed)
+      setFocus({ x: 50, y: 50 })
       setNote(`Lista para guardar · ${formatBytes(imageBytes(compressed))}`)
     } catch (caught) {
       setNote("")
@@ -174,7 +225,7 @@ function CoverEditor({ cover, onSave, onDone, onError }) {
     try {
       await onSave("/api/cover", {
         method: "PUT",
-        body: JSON.stringify({ image }),
+        body: JSON.stringify({ image, focusX: focus.x, focusY: focus.y }),
       })
       setNote("")
       onDone(image ? "Portada actualizada" : "Portada quitada")
@@ -188,10 +239,22 @@ function CoverEditor({ cover, onSave, onDone, onError }) {
   return (
     <form className="admin-card" onSubmit={submit}>
       <h2>Portada</h2>
-      <p>La foto se comprime a JPEG antes de guardarse en base64.</p>
+      <p>Arrastra la foto para elegir la parte que se ve en la tienda. Luego guárdala.</p>
       <div
-        className="admin-cover"
-        style={image ? { backgroundImage: `url("${image}")` } : undefined}
+        ref={frameRef}
+        className={dragging ? "admin-cover is-dragging" : "admin-cover"}
+        style={
+          image
+            ? {
+                backgroundImage: `url("${image}")`,
+                backgroundPosition: `${focus.x}% ${focus.y}%`,
+              }
+            : undefined
+        }
+        onPointerDown={beginDrag}
+        onPointerMove={moveDrag}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
       />
       <label>
         Foto de portada
@@ -435,6 +498,25 @@ function ProductEditor({ product, onSave, onDone, onError }) {
       </div>
     </form>
   )
+}
+
+function focusPercent(value) {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return 50
+  return Math.min(100, Math.max(0, number))
+}
+
+function movedFocus(start, delta, axis, box, natural) {
+  const span = axis === "x" ? box.width : box.height
+  let extra = span
+  if (natural?.width && natural?.height && box.width && box.height) {
+    const scale = Math.max(box.width / natural.width, box.height / natural.height)
+    const covered = (axis === "x" ? natural.width : natural.height) * scale
+    extra = covered - span
+  }
+  if (extra <= 1) return start
+  const next = ((start / 100) * extra - delta) / extra * 100
+  return Math.min(100, Math.max(0, Math.round(next * 10) / 10))
 }
 
 function formatBytes(bytes) {

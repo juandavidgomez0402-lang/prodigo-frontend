@@ -142,8 +142,15 @@
 }
 
 .admin-cover {
-  aspect-ratio: 16 / 9;
+  height: clamp(128px, 22vw, 200px);
   background: #efefef center / cover no-repeat;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.admin-cover.is-dragging {
+  cursor: grabbing;
 }
 
 .admin-thumb,
