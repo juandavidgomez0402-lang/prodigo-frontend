@@ -1,5 +1,7 @@
+import { apiUrl } from "../api.js"
+
 export async function adminRequest(path, token, options = {}) {
-  const response = await fetch(path, {
+  const response = await fetch(apiUrl(path), {
     ...options,
     headers: {
       "Content-Type": "application/json",
