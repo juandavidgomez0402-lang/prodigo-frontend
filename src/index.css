@@ -157,7 +157,7 @@ img {
 }
 
 .cover {
-  min-height: calc(100svh - var(--header));
+  height: clamp(128px, 22vw, 200px);
   display: grid;
   background: var(--soft);
   color: var(--ink);
@@ -172,42 +172,14 @@ img {
 
 .cover-inner {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 22px;
-  padding: 56px 24px 72px;
+  padding: 16px;
 }
 
 .cover.has-image .cover-inner {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.46));
-}
-
-.cover-logo {
-  width: min(250px, 70vw);
-  height: auto;
-}
-
-.cover h1 {
-  margin: 0;
-  font-size: clamp(40px, 6vw, 72px);
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.lede {
-  max-width: 420px;
-  margin: 0;
-  color: #5e5e5e;
-  font-size: 18px;
-  font-weight: 300;
-  line-height: 1.5;
-}
-
-.cover.has-image .lede {
-  color: rgba(255, 255, 255, 0.86);
 }
 
 .cover-link,
@@ -258,7 +230,7 @@ img {
 }
 
 .catalog {
-  padding: 72px 0 96px;
+  padding: 28px 0 96px;
 }
 
 .catalog-head {
@@ -792,21 +764,8 @@ img {
     flex-shrink: 0;
   }
 
-  .cover-inner {
-    padding: 36px 16px 48px;
-    gap: 16px;
-  }
-
-  .cover-logo {
-    width: min(210px, 62vw);
-  }
-
-  .lede {
-    font-size: 16px;
-  }
-
   .catalog {
-    padding: 36px 0 56px;
+    padding: 20px 0 56px;
   }
 
   .catalog-head h2,

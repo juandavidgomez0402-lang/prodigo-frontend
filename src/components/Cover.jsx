@@ -10,15 +10,8 @@ export default function Cover({ cover }) {
       style={image ? { backgroundImage: `url("${image}")` } : undefined}
     >
       <div className="cover-inner">
-        {image ? (
-          <h1>{title}</h1>
-        ) : (
-          <>
-            <img className="cover-logo" src="/logo.png" alt="" />
-            <h1 className="sr-only">{title}</h1>
-          </>
-        )}
-        <p className="lede">{subtitle}</p>
+        <h1 className="sr-only">{title}</h1>
+        <p className="sr-only">{subtitle}</p>
         <a className="cover-link" href="#tienda">
           Ver tienda
         </a>
