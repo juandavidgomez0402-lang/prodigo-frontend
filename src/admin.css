@@ -122,6 +122,19 @@
   font-size: 16px;
 }
 
+.admin-card textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: 1px solid #d5d5d5;
+  background: #ffffff;
+  color: #141414;
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 16px;
+  resize: vertical;
+}
+
 .admin-card input[type="file"] {
   padding: 10px 0;
   border: 0;

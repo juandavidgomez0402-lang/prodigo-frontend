@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react"
 import { useCart } from "../context/CartContext.jsx"
 import { formatPrice } from "../format.js"
+import ProductModal from "./ProductModal.jsx"
 
 export default function ProductCard({ product, index }) {
   const { addItem } = useCart()
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
   const [imageFailed, setImageFailed] = useState(false)
+  const [open, setOpen] = useState(false)
   const timer = useRef(0)
 
   useEffect(() => () => window.clearTimeout(timer.current), [])
@@ -33,25 +35,32 @@ export default function ProductCard({ product, index }) {
 
   return (
     <article className="product-card">
-      <div className="product-media">
-        {showImage ? (
-          <img
-            src={product.image}
-            alt={product.name}
-            onError={() => setImageFailed(true)}
-          />
-        ) : (
-          <span>{String(index + 1).padStart(2, "0")}</span>
-        )}
-      </div>
-      <div className="product-body">
-        <div>
+      <button
+        type="button"
+        className="product-open"
+        aria-label={`Ver ${product.name}`}
+        onClick={() => setOpen(true)}
+      >
+        <div className="product-media">
+          {showImage ? (
+            <img
+              src={product.image}
+              alt=""
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
+            <span>{String(index + 1).padStart(2, "0")}</span>
+          )}
+        </div>
+        <div className="product-copy">
           <div className="product-top">
-            <h3 className="product-name">{product.name}</h3>
+            <span className="product-name">{product.name}</span>
             <p className="product-price">{formatPrice(product.price)}</p>
           </div>
           {product.detail ? <p className="product-detail">{product.detail}</p> : null}
         </div>
+      </button>
+      <div className="product-body">
         <div className="product-actions">
           <div className="qty-row">
             <span id={`${product.id}-qty`}>Cantidad</span>
@@ -100,6 +109,9 @@ export default function ProductCard({ product, index }) {
           </button>
         </div>
       </div>
+      {open ? (
+        <ProductModal product={product} index={index} onClose={() => setOpen(false)} />
+      ) : null}
     </article>
   )
 }

@@ -220,6 +220,7 @@ function CoverEditor({ cover, onSave, onDone, onError }) {
 function ProductCreator({ onSave, onDone, onError }) {
   const [name, setName] = useState("")
   const [detail, setDetail] = useState("")
+  const [description, setDescription] = useState("")
   const [price, setPrice] = useState("")
   const [image, setImage] = useState(null)
   const [note, setNote] = useState("")
@@ -246,10 +247,11 @@ function ProductCreator({ onSave, onDone, onError }) {
     try {
       await onSave("/api/products", {
         method: "POST",
-        body: JSON.stringify({ name, detail, price, image }),
+        body: JSON.stringify({ name, detail, description, price, image }),
       })
       setName("")
       setDetail("")
+      setDescription("")
       setPrice("")
       setImage(null)
       setNote("")
@@ -282,6 +284,14 @@ function ProductCreator({ onSave, onDone, onError }) {
         <label>
           Detalle
           <input value={detail} onChange={(event) => setDetail(event.target.value)} />
+        </label>
+        <label>
+          Descripción
+          <textarea
+            rows="5"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+          />
         </label>
         <label>
           Foto
@@ -328,6 +338,7 @@ function ProductList({ products, onSave, onDone, onError }) {
 function ProductEditor({ product, onSave, onDone, onError }) {
   const [name, setName] = useState(product.name)
   const [detail, setDetail] = useState(product.detail || "")
+  const [description, setDescription] = useState(product.description || "")
   const [price, setPrice] = useState(String(product.price))
   const [image, setImage] = useState(product.image)
   const [pending, setPending] = useState(false)
@@ -335,6 +346,7 @@ function ProductEditor({ product, onSave, onDone, onError }) {
   useEffect(() => {
     setName(product.name)
     setDetail(product.detail || "")
+    setDescription(product.description || "")
     setPrice(String(product.price))
     setImage(product.image)
   }, [product])
@@ -356,7 +368,7 @@ function ProductEditor({ product, onSave, onDone, onError }) {
     try {
       await onSave(`/api/products/${product.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ name, detail, price, image }),
+        body: JSON.stringify({ name, detail, description, price, image }),
       })
       onDone("Producto actualizado")
     } catch (caught) {
@@ -399,6 +411,14 @@ function ProductEditor({ product, onSave, onDone, onError }) {
         <label>
           Detalle
           <input value={detail} onChange={(event) => setDetail(event.target.value)} />
+        </label>
+        <label>
+          Descripción
+          <textarea
+            rows="5"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+          />
         </label>
         <label>
           Foto

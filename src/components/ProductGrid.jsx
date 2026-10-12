@@ -16,7 +16,7 @@ export default function ProductGrid({ products, status }) {
           ) : null}
         </div>
         <p className="catalog-note">
-          Precio por pieza. Elige la cantidad y agrégala al carrito.
+          Precio por pieza. Toca un producto para ver su descripción.
         </p>
 
         {status === "loading" ? <SkeletonGrid /> : null}
