@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useCart } from "../context/CartContext.jsx"
-import { formatPrice } from "../format.js"
+import { salePrice } from "../format.js"
+import ProductOffer, { isAvailable } from "./ProductOffer.jsx"
 
 export default function ProductModal({ product, index, onClose }) {
   const { addItem } = useCart()
@@ -30,8 +31,15 @@ export default function ProductModal({ product, index, onClose }) {
     setQty(Math.max(1, Math.min(99, amount)))
   }
 
+  const soldOut = !isAvailable(product)
+  const discount = Math.min(100, Math.max(0, Number(product.discount) || 0))
+
   function add() {
-    addItem(product, qty)
+    if (soldOut) return
+    addItem(
+      { ...product, price: salePrice(product), readyDays: Number(product.readyDays) || 0 },
+      qty,
+    )
     setAdded(true)
   }
 
@@ -46,6 +54,8 @@ export default function ProductModal({ product, index, onClose }) {
       </div>
       <div className="product-modal-scroll">
         <div className="product-modal-hero">
+          {soldOut ? <span className="product-badge">Agotado</span> : null}
+          {!soldOut && discount > 0 ? <span className="product-badge off">-{discount}%</span> : null}
           {showImage ? (
             <img src={product.image} alt={product.name} onError={() => setImageFailed(true)} />
           ) : (
@@ -55,7 +65,7 @@ export default function ProductModal({ product, index, onClose }) {
         <div className="product-modal-body">
           <div className="product-top">
             <h2 id="product-modal-title">{product.name}</h2>
-            <p className="product-price">{formatPrice(product.price)}</p>
+            <ProductOffer product={product} />
           </div>
           {product.description?.trim() && product.detail ? (
             <p className="product-detail">{product.detail}</p>
@@ -73,7 +83,7 @@ export default function ProductModal({ product, index, onClose }) {
                 <button
                   type="button"
                   onClick={() => changeQty(qty - 1)}
-                  disabled={qty <= 1}
+                  disabled={soldOut || qty <= 1}
                   aria-label={`Disminuir cantidad de ${product.name}`}
                 >
                   −
@@ -84,20 +94,21 @@ export default function ProductModal({ product, index, onClose }) {
                   min="1"
                   max="99"
                   value={qty}
+                  disabled={soldOut}
                   onChange={(event) => changeQty(event.target.value)}
                 />
                 <button
                   type="button"
                   onClick={() => changeQty(qty + 1)}
-                  disabled={qty >= 99}
+                  disabled={soldOut || qty >= 99}
                   aria-label={`Aumentar cantidad de ${product.name}`}
                 >
                   +
                 </button>
               </div>
             </div>
-            <button type="button" className="add-button" onClick={add}>
-              {added ? "Agregado" : "Agregar al carrito"}
+            <button type="button" className="add-button" onClick={add} disabled={soldOut}>
+              {soldOut ? "Agotado" : added ? "Agregado" : "Agregar al carrito"}
             </button>
           </div>
         </div>

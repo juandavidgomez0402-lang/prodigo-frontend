@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useCart } from "../context/CartContext.jsx"
-import { formatPrice } from "../format.js"
+import { formatPrice, readyLabel } from "../format.js"
 
 export default function CartDrawer({ whatsapp = "" }) {
   const { items, total, open, setOpen, setItemQuantity, removeItem } = useCart()
@@ -54,7 +54,11 @@ export default function CartDrawer({ whatsapp = "" }) {
       address ? `Dirección: ${address}` : null,
       "",
       ...items.map(
-        (item) => `• ${item.name} x${item.quantity} — ${formatPrice(item.price * item.quantity)}`,
+        (item) => {
+          const wait = readyLabel(item.readyDays)
+          const line = `• ${item.name} x${item.quantity} — ${formatPrice(item.price * item.quantity)}`
+          return wait ? `${line} (${wait})` : line
+        },
       ),
       `Total: ${formatPrice(total)}`,
     ]
@@ -104,7 +108,10 @@ export default function CartDrawer({ whatsapp = "" }) {
             {items.map((item) => (
               <li key={item.id}>
                 <div className="cart-line-top">
-                  <p>{item.name}</p>
+                  <p>
+                    {item.name}
+                    {readyLabel(item.readyDays) ? <span className="cart-wait">{readyLabel(item.readyDays)}</span> : null}
+                  </p>
                   <p>{formatPrice(item.price * item.quantity)}</p>
                 </div>
                 {!checkout ? (

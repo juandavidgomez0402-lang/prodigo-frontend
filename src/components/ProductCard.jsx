@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react"
 import { useCart } from "../context/CartContext.jsx"
-import { formatPrice } from "../format.js"
+import { salePrice } from "../format.js"
 import ProductModal from "./ProductModal.jsx"
+import ProductOffer, { isAvailable } from "./ProductOffer.jsx"
 
 export default function ProductCard({ product, index }) {
   const { addItem } = useCart()
@@ -23,8 +24,15 @@ export default function ProductCard({ product, index }) {
     setQty(Math.max(1, Math.min(99, amount)))
   }
 
+  const soldOut = !isAvailable(product)
+  const discount = Math.min(100, Math.max(0, Number(product.discount) || 0))
+
   function add() {
-    addItem(product, qty || 1)
+    if (soldOut) return
+    addItem(
+      { ...product, price: salePrice(product), readyDays: Number(product.readyDays) || 0 },
+      qty || 1,
+    )
     if (qty === "") setQty(1)
     setAdded(true)
     window.clearTimeout(timer.current)
@@ -42,6 +50,8 @@ export default function ProductCard({ product, index }) {
         onClick={() => setOpen(true)}
       >
         <div className="product-media">
+          {soldOut ? <span className="product-badge">Agotado</span> : null}
+          {!soldOut && discount > 0 ? <span className="product-badge off">-{discount}%</span> : null}
           {showImage ? (
             <img
               src={product.image}
@@ -55,7 +65,7 @@ export default function ProductCard({ product, index }) {
         <div className="product-copy">
           <div className="product-top">
             <span className="product-name">{product.name}</span>
-            <p className="product-price">{formatPrice(product.price)}</p>
+            <ProductOffer product={product} />
           </div>
           {product.detail ? <p className="product-detail">{product.detail}</p> : null}
         </div>
@@ -68,6 +78,7 @@ export default function ProductCard({ product, index }) {
               <button
                 type="button"
                 onClick={() => changeQty(Math.max(1, (Number(qty) || 1) - 1))}
+                disabled={soldOut}
                 aria-label={`Disminuir cantidad de ${product.name}`}
               >
                 −
@@ -78,6 +89,7 @@ export default function ProductCard({ product, index }) {
                 min="1"
                 max="99"
                 value={qty}
+                disabled={soldOut}
                 onChange={(event) => changeQty(event.target.value)}
                 onBlur={() => {
                   if (qty === "") setQty(1)
@@ -86,6 +98,7 @@ export default function ProductCard({ product, index }) {
               <button
                 type="button"
                 onClick={() => changeQty(Math.min(99, (Number(qty) || 1) + 1))}
+                disabled={soldOut}
                 aria-label={`Aumentar cantidad de ${product.name}`}
               >
                 +
@@ -95,10 +108,15 @@ export default function ProductCard({ product, index }) {
           <button
             type="button"
             className="add-button"
-            aria-label={added ? `${product.name} agregado` : `Agregar ${product.name} al carrito`}
+            disabled={soldOut}
+            aria-label={
+              soldOut ? `${product.name} agotado` : added ? `${product.name} agregado` : `Agregar ${product.name} al carrito`
+            }
             onClick={add}
           >
-            {added ? (
+            {soldOut ? (
+              "Agotado"
+            ) : added ? (
               "Agregado"
             ) : (
               <>

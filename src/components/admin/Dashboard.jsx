@@ -383,18 +383,151 @@ function ProductList({ products, onSave, onDone, onError }) {
   return (
     <section className="admin-card">
       <h2>Productos</h2>
-      <div className="admin-list">
-        {products.map((product) => (
-          <ProductEditor
-            key={product.id}
-            product={product}
-            onSave={onSave}
-            onDone={onDone}
-            onError={onError}
-          />
-        ))}
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Estado</th>
+              <th>Descuento %</th>
+              <th>Días para listo</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {products.map((product) => (
+              <ProductRow
+                key={product.id}
+                product={product}
+                onSave={onSave}
+                onDone={onDone}
+                onError={onError}
+              />
+            ))}
+          </tbody>
+        </table>
       </div>
     </section>
+  )
+}
+
+function ProductRow({ product, onSave, onDone, onError }) {
+  const [available, setAvailable] = useState(product.available !== false)
+  const [discount, setDiscount] = useState(String(product.discount || 0))
+  const [readyDays, setReadyDays] = useState(String(product.readyDays || 0))
+  const [editing, setEditing] = useState(false)
+  const [pending, setPending] = useState(false)
+
+  useEffect(() => {
+    setAvailable(product.available !== false)
+    setDiscount(String(product.discount || 0))
+    setReadyDays(String(product.readyDays || 0))
+  }, [product])
+
+  async function saveCommerce(next = {}) {
+    setPending(true)
+    try {
+      await onSave(`/api/products/${product.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          available: next.available ?? available,
+          discount: next.discount ?? discount,
+          readyDays: next.readyDays ?? readyDays,
+        }),
+      })
+      onDone("Producto actualizado")
+    } catch (caught) {
+      onError(caught.message)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function remove() {
+    if (!window.confirm(`¿Eliminar ${product.name}?`)) return
+    setPending(true)
+    try {
+      await onSave(`/api/products/${product.id}`, { method: "DELETE" })
+      onDone("Producto eliminado")
+    } catch (caught) {
+      onError(caught.message)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <>
+      <tr>
+        <td>
+          <div className="admin-product-cell">
+            {product.image ? <img src={product.image} alt="" /> : <span className="admin-ph" />}
+            <span>{product.name}</span>
+          </div>
+        </td>
+        <td>
+          <select
+            aria-label={`Estado de ${product.name}`}
+            value={available ? "disponible" : "agotado"}
+            disabled={pending}
+            onChange={(event) => {
+              const next = event.target.value === "disponible"
+              setAvailable(next)
+              saveCommerce({ available: next })
+            }}
+          >
+            <option value="disponible">Disponible</option>
+            <option value="agotado">Agotado</option>
+          </select>
+        </td>
+        <td>
+          <input
+            aria-label={`Descuento de ${product.name}`}
+            inputMode="numeric"
+            min="0"
+            max="100"
+            value={discount}
+            disabled={pending}
+            onChange={(event) => setDiscount(event.target.value)}
+            onBlur={() => saveCommerce({ discount })}
+          />
+        </td>
+        <td>
+          <input
+            aria-label={`Días para tener listo ${product.name}`}
+            inputMode="numeric"
+            min="0"
+            max="365"
+            value={readyDays}
+            disabled={pending}
+            onChange={(event) => setReadyDays(event.target.value)}
+            onBlur={() => saveCommerce({ readyDays })}
+          />
+        </td>
+        <td>
+          <div className="admin-row-actions">
+            <button className="text-button" type="button" onClick={() => setEditing((open) => !open)}>
+              {editing ? "Cerrar" : "Editar"}
+            </button>
+            <button className="text-button" type="button" onClick={remove} disabled={pending}>
+              Eliminar
+            </button>
+          </div>
+        </td>
+      </tr>
+      {editing ? (
+        <tr className="admin-edit-row">
+          <td colSpan="5">
+            <ProductEditor
+              product={product}
+              onSave={onSave}
+              onDone={onDone}
+              onError={onError}
+            />
+          </td>
+        </tr>
+      ) : null}
+    </>
   )
 }
 

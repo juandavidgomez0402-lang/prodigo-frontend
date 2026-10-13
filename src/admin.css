@@ -161,6 +161,67 @@
   background: #efefef;
 }
 
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #e4e4e4;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.admin-table th {
+  color: #6d6d6d;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-card select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #d5d5d5;
+  background: #ffffff;
+  color: #141414;
+  font-size: 16px;
+}
+
+.admin-product-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 180px;
+}
+
+.admin-product-cell img,
+.admin-ph {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  background: #efefef;
+  flex: none;
+}
+
+.admin-row-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.admin-edit-row td {
+  padding-top: 0;
+}
+
 .admin-product {
   display: grid;
   gap: 12px;

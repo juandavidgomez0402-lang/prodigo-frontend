@@ -47,6 +47,7 @@ export function CartProvider({ children }) {
             id: product.id,
             name: product.name,
             price: product.price,
+            readyDays: Number(product.readyDays) || 0,
             image: product.image ?? null,
             quantity: qty,
           },
@@ -54,7 +55,12 @@ export function CartProvider({ children }) {
       }
       return current.map((item) =>
         item.id === product.id
-          ? { ...item, quantity: Math.min(99, item.quantity + qty) }
+          ? {
+              ...item,
+              price: product.price,
+              readyDays: Number(product.readyDays) || 0,
+              quantity: Math.min(99, item.quantity + qty),
+            }
           : item,
       )
     })
