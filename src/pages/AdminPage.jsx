@@ -1,76 +1,82 @@
-import { onAuthStateChanged, signOut } from "firebase/auth"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import Dashboard from "../components/admin/Dashboard.jsx"
-import { auth, authReady, firebaseReady, signInAdmin } from "../lib/firebase.js"
+import { clearSession, login, readSession, registerAdmin, setupAvailable } from "../lib/session.js"
 import "../admin.css"
 
-const authErrors = {
-  "auth/invalid-email": "El correo no es válido",
-  "auth/user-not-found": "Correo o contraseña incorrectos",
-  "auth/wrong-password": "Correo o contraseña incorrectos",
-  "auth/invalid-credential": "Correo o contraseña incorrectos. Usa la cuenta creada en Firebase Authentication.",
-  "auth/missing-password": "Escribe la contraseña.",
-  "auth/invalid-password": "Correo o contraseña incorrectos. Usa la cuenta creada en Firebase Authentication.",
-  "auth/too-many-requests": "Demasiados intentos. Espera un momento.",
-  "auth/network-request-failed": "No hay conexión con Firebase",
-  "auth/operation-not-allowed": "Activa el acceso con correo y contraseña en Firebase Authentication",
-  "auth/configuration-not-found": "Authentication no está activado en el proyecto de Firebase",
-}
-
 export default function AdminPage() {
-  const [user, setUser] = useState(undefined)
+  const [session, setSession] = useState(readSession)
 
-  useEffect(() => {
-    if (!auth) {
-      setUser(null)
-      return undefined
-    }
-    let unsubscribe = () => {}
-    let active = true
-    authReady.then(() => {
-      if (!active) return
-      unsubscribe = onAuthStateChanged(auth, (nextUser) => {
-        if (active) setUser(nextUser)
-      })
-    })
-    return () => {
-      active = false
-      unsubscribe()
-    }
-  }, [])
-
-  if (!firebaseReady) return <SetupNotice />
-  if (user === undefined) {
-    return (
-      <main className="admin-gate">
-        <p>Cargando sesión…</p>
-      </main>
-    )
-  }
-  if (!user) return <LoginForm />
-  return <Dashboard user={user} onLogout={() => signOut(auth)} />
+  if (!session) return <LoginForm onSuccess={setSession} />
+  return (
+    <Dashboard
+      user={session}
+      onLogout={() => {
+        clearSession()
+        setSession(null)
+      }}
+    />
+  )
 }
 
-function LoginForm() {
+function LoginForm({ onSuccess }) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [pending, setPending] = useState(false)
+  const [canRegister, setCanRegister] = useState(false)
 
-  async function submit(event) {
-    event.preventDefault()
+  useEffect(() => {
+    let active = true
+    setupAvailable()
+      .then((available) => {
+        if (active) setCanRegister(available)
+      })
+      .catch((caught) => {
+        if (active) setError(caught.message)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  function credentials(event) {
     const form = new FormData(event.currentTarget)
     const nextEmail = String(form.get("email") || email).trim()
     const nextPassword = String(form.get("password") || password)
     setEmail(nextEmail)
     setPassword(nextPassword)
+    return { email: nextEmail, password: nextPassword }
+  }
+
+  async function submit(event) {
+    event.preventDefault()
+    const next = credentials(event)
     setError("")
     setPending(true)
     try {
-      await signInAdmin(nextEmail, nextPassword)
+      onSuccess(await login(next.email, next.password))
     } catch (caught) {
-      setError(authErrors[caught.code] || "No se pudo iniciar sesión")
+      setError(caught.message)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function register(event) {
+    event.preventDefault()
+    const form = event.currentTarget.form
+    const nextEmail = String(new FormData(form).get("email") || email).trim()
+    const nextPassword = String(new FormData(form).get("password") || password)
+    setEmail(nextEmail)
+    setPassword(nextPassword)
+    setError("")
+    setPending(true)
+    try {
+      onSuccess(await registerAdmin(nextEmail, nextPassword))
+    } catch (caught) {
+      setError(caught.message)
+      if (caught.message.includes("ya está registrado")) setCanRegister(false)
     } finally {
       setPending(false)
     }
@@ -81,7 +87,11 @@ function LoginForm() {
       <form className="admin-panel" onSubmit={submit}>
         <img src="/mark.png" alt="" width="48" height="48" />
         <h1>Admin</h1>
-        <p>Entra con la cuenta de Firebase para editar la tienda.</p>
+        <p>
+          {canRegister
+            ? "Registra el perfil del administrador. Este botón solo se puede usar una vez."
+            : "Entra con el correo y la contraseña del administrador."}
+        </p>
         <label>
           Correo
           <input
@@ -105,28 +115,17 @@ function LoginForm() {
           />
         </label>
         {error ? <p className="admin-error">{error}</p> : null}
-        <button className="add-button" type="submit" disabled={pending}>
-          {pending ? "Entrando…" : "Entrar"}
-        </button>
+        {canRegister ? (
+          <button className="add-button" type="button" onClick={register} disabled={pending}>
+            {pending ? "Registrando…" : "Registrar administrador"}
+          </button>
+        ) : (
+          <button className="add-button" type="submit" disabled={pending}>
+            {pending ? "Entrando…" : "Entrar"}
+          </button>
+        )}
         <Link to="/">Volver a la tienda</Link>
       </form>
-    </main>
-  )
-}
-
-function SetupNotice() {
-  return (
-    <main className="admin-gate">
-      <section className="admin-panel">
-        <img src="/mark.png" alt="" width="48" height="48" />
-        <h1>Admin</h1>
-        <p>Falta conectar Firebase Authentication.</p>
-        <p>
-          En <code>prodigo-frontend/.env</code> agrega la configuración web del proyecto. En{" "}
-          <code>prodigo-backend/.env</code> agrega el mismo <code>FIREBASE_PROJECT_ID</code>.
-        </p>
-        <Link to="/">Volver a la tienda</Link>
-      </section>
     </main>
   )
 }

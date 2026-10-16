@@ -8,6 +8,14 @@ export function apiUrl(path) {
   return `${API_ORIGIN}${normalized}`
 }
 
+export function mediaUrl(value) {
+  if (!value) return ""
+  if (value.startsWith("data:") || value.startsWith("http://") || value.startsWith("https://")) {
+    return value
+  }
+  return apiUrl(value)
+}
+
 export async function fetchStore() {
   const response = await fetch(apiUrl("/api/store"))
   if (!response.ok) {

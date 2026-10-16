@@ -1,3 +1,5 @@
+import { mediaUrl } from "../api.js"
+
 function focusPercent(value) {
   const number = Number(value)
   if (!Number.isFinite(number)) return 50
@@ -18,7 +20,7 @@ export default function Cover({ cover }) {
       style={
         image
           ? {
-              backgroundImage: `url("${image}")`,
+              backgroundImage: `url("${mediaUrl(image)}")`,
               backgroundPosition: `${focusX}% ${focusY}%`,
             }
           : undefined

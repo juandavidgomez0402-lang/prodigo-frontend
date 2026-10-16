@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
-import { fetchStore } from "../../api.js"
+import { fetchStore, mediaUrl } from "../../api.js"
 import { adminRequest } from "../../lib/adminApi.js"
 import { compressImage, imageBytes } from "../../lib/compressImage.js"
 
@@ -15,7 +15,7 @@ export default function Dashboard({ user, onLogout }) {
     let active = true
     async function load() {
       try {
-        const token = await user.getIdToken()
+        const token = user.token
         await adminRequest("/api/me", token)
         const data = await fetchStore()
         if (!active) return
@@ -37,7 +37,7 @@ export default function Dashboard({ user, onLogout }) {
   async function save(path, options) {
     setError("")
     setMessage("")
-    const token = await user.getIdToken()
+    const token = user.token
     const next = await adminRequest(path, token, options)
     setStore(next)
     return next
@@ -59,7 +59,7 @@ export default function Dashboard({ user, onLogout }) {
       <main className="admin-wrap admin-main">
         <p className="eyebrow">Administración</p>
         <h1>Tienda</h1>
-        <p className="admin-note">Solo el rol prodigo puede personalizar esta tienda.</p>
+        <p className="admin-note">Desde aquí se personaliza la tienda.</p>
         {status === "loading" ? <p>Cargando catálogo…</p> : null}
         {message ? <p className="admin-note">{message}</p> : null}
         {error ? <p className="admin-error">{error}</p> : null}
@@ -225,7 +225,11 @@ function CoverEditor({ cover, onSave, onDone, onError }) {
     try {
       await onSave("/api/cover", {
         method: "PUT",
-        body: JSON.stringify({ image, focusX: focus.x, focusY: focus.y }),
+        body: JSON.stringify({
+          ...(photoField(image) !== undefined ? { image: photoField(image) } : {}),
+          focusX: focus.x,
+          focusY: focus.y,
+        }),
       })
       setNote("")
       onDone(image ? "Portada actualizada" : "Portada quitada")
@@ -246,7 +250,7 @@ function CoverEditor({ cover, onSave, onDone, onError }) {
         style={
           image
             ? {
-                backgroundImage: `url("${image}")`,
+                backgroundImage: `url("${mediaUrl(image)}")`,
                 backgroundPosition: `${focus.x}% ${focus.y}%`,
               }
             : undefined
@@ -310,7 +314,7 @@ function ProductCreator({ onSave, onDone, onError }) {
     try {
       await onSave("/api/products", {
         method: "POST",
-        body: JSON.stringify({ name, detail, description, price, image }),
+        body: JSON.stringify({ name, detail, description, price, image: photoField(image) }),
       })
       setName("")
       setDetail("")
@@ -361,7 +365,7 @@ function ProductCreator({ onSave, onDone, onError }) {
           <input type="file" accept="image/jpeg,image/png,image/webp" onChange={choose} />
         </label>
       </div>
-      {image ? <img className="admin-thumb" src={image} alt="" /> : null}
+      {image ? <img className="admin-thumb" src={mediaUrl(image)} alt="" /> : null}
       {note ? <p className="admin-note">{note}</p> : null}
       <button className="add-button" type="submit" disabled={pending}>
         {pending ? "Creando…" : "Crear producto"}
@@ -461,7 +465,7 @@ function ProductRow({ product, onSave, onDone, onError }) {
       <tr>
         <td>
           <div className="admin-product-cell">
-            {product.image ? <img src={product.image} alt="" /> : <span className="admin-ph" />}
+            {product.image ? <img src={mediaUrl(product.image)} alt="" /> : <span className="admin-ph" />}
             <span>{product.name}</span>
           </div>
         </td>
@@ -564,7 +568,13 @@ function ProductEditor({ product, onSave, onDone, onError }) {
     try {
       await onSave(`/api/products/${product.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ name, detail, description, price, image }),
+        body: JSON.stringify({
+          name,
+          detail,
+          description,
+          price,
+          ...(photoField(image) !== undefined ? { image: photoField(image) } : {}),
+        }),
       })
       onDone("Producto actualizado")
     } catch (caught) {
@@ -589,7 +599,7 @@ function ProductEditor({ product, onSave, onDone, onError }) {
 
   return (
     <form className="admin-product" onSubmit={save}>
-      {image ? <img src={image} alt="" /> : <span aria-hidden="true" />}
+      {image ? <img src={mediaUrl(image)} alt="" /> : <span aria-hidden="true" />}
       <div className="admin-fields">
         <label>
           Nombre
@@ -631,6 +641,11 @@ function ProductEditor({ product, onSave, onDone, onError }) {
       </div>
     </form>
   )
+}
+
+function photoField(image) {
+  if (!image || String(image).startsWith("data:")) return image ?? null
+  return undefined
 }
 
 function focusPercent(value) {

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useCart } from "../context/CartContext.jsx"
+import { mediaUrl } from "../api.js"
 import { salePrice } from "../format.js"
 import ProductOffer, { isAvailable } from "./ProductOffer.jsx"
 
@@ -57,7 +58,7 @@ export default function ProductModal({ product, index, onClose }) {
           {soldOut ? <span className="product-badge">Agotado</span> : null}
           {!soldOut && discount > 0 ? <span className="product-badge off">-{discount}%</span> : null}
           {showImage ? (
-            <img src={product.image} alt={product.name} onError={() => setImageFailed(true)} />
+            <img src={mediaUrl(product.image)} alt={product.name} onError={() => setImageFailed(true)} />
           ) : (
             <span>{String(index + 1).padStart(2, "0")}</span>
           )}
