@@ -1,7 +1,6 @@
-const API_ORIGIN = String(import.meta.env.VITE_API_URL || "https://apiprodigo.nodefex.com").replace(
-  /\/$/,
-  "",
-)
+import { apiOrigin } from "./variables.js"
+
+const API_ORIGIN = apiOrigin.trim().replace(/\/$/, "")
 
 export function apiUrl(path) {
   const normalized = path.startsWith("/") ? path : `/${path}`
