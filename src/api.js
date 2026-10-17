@@ -1,4 +1,4 @@
-const API_ORIGIN = (import.meta.env.VITE_API_URL || "https://prodigo-backend.onrender.com").replace(
+const API_ORIGIN = String(import.meta.env.VITE_API_URL || "https://apiprodigo.nodefex.com").replace(
   /\/$/,
   "",
 )

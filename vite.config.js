@@ -8,7 +8,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       "/api": {
-        target: "https://prodigo-backend.onrender.com",
+        target: "http://127.0.0.1:3001",
         changeOrigin: true,
       },
     },
